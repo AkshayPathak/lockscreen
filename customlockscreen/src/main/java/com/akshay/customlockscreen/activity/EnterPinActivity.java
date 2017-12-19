@@ -61,7 +61,7 @@ public class EnterPinActivity extends AppCompatActivity {
     private static int PIN_LENGTH = 5;
     private static final String FINGER_PRINT_KEY = "FingerPrintKey";
 
-    private static final String PREFERENCES = "com.amirarcane.lockscreen";
+    private static final String PREFERENCES = "com.akshay.customlockscreen";
     private static final String KEY_PIN = "pin";
 
     private PinLockView mPinLockView;
