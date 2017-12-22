@@ -57,13 +57,10 @@ public class EnterPinActivity extends AppCompatActivity {
     public static final String EXTRA_FONT_NUM = "numFont";
     public static final String EXTRA_PIN = "default_pin";
     public static final String EXTRA_PIN_LENGTH = "pin_length";
-
-    private static int PIN_LENGTH = 5;
     private static final String FINGER_PRINT_KEY = "FingerPrintKey";
-
     private static final String PREFERENCES = "com.akshay.customlockscreen";
     private static final String KEY_PIN = "pin";
-
+    private static int PIN_LENGTH = 5;
     private PinLockView mPinLockView;
     private IndicatorDots mIndicatorDots;
     private TextView mTextTitle;
@@ -111,64 +108,64 @@ public class EnterPinActivity extends AppCompatActivity {
             showFingerprint = (AnimatedVectorDrawable) getDrawable(R.drawable.show_fingerprint);
             fingerprintToTick = (AnimatedVectorDrawable) getDrawable(R.drawable.fingerprint_to_tick);
             fingerprintToCross = (AnimatedVectorDrawable) getDrawable(R.drawable.fingerprint_to_cross);
+        }
 
-            PIN_LENGTH = getIntent().getIntExtra(EXTRA_PIN_LENGTH, 5);
-            mDefaultPin = getIntent().getStringExtra(EXTRA_PIN);
+        PIN_LENGTH = getIntent().getIntExtra(EXTRA_PIN_LENGTH, 5);
+        mDefaultPin = getIntent().getStringExtra(EXTRA_PIN);
 
-            if (mSetPin) {
-                changeLayoutForSetPin();
+        if (mSetPin) {
+            changeLayoutForSetPin();
+        } else {
+            String pin;
+
+            if (!mDefaultPin.equals("")) {
+                pin = mDefaultPin;
             } else {
-                String pin;
+                pin = getPinFromSharedPreferences();
+            }
 
-                if (!mDefaultPin.equals("")) {
-                    pin = mDefaultPin;
-                } else {
-                    pin = getPinFromSharedPreferences();
-                }
+            if (pin.equals("")) {
+                changeLayoutForSetPin();
+                mSetPin = true;
+            } else {
+                checkForFingerPrint();
+            }
+        }
 
-                if (pin.equals("")) {
-                    changeLayoutForSetPin();
-                    mSetPin = true;
+        final PinLockListener pinLockListener = new PinLockListener() {
+
+            @Override
+            public void onComplete(String pin) {
+                if (mSetPin) {
+                    setPin(pin);
                 } else {
-                    checkForFingerPrint();
+                    checkPin(pin);
                 }
             }
 
-            final PinLockListener pinLockListener = new PinLockListener() {
+            @Override
+            public void onEmpty() {
+                Log.d(TAG, "Pin empty");
+            }
 
-                @Override
-                public void onComplete(String pin) {
-                    if (mSetPin) {
-                        setPin(pin);
-                    } else {
-                        checkPin(pin);
-                    }
-                }
+            @Override
+            public void onPinChange(int pinLength, String intermediatePin) {
+                Log.d(TAG, "Pin changed, new length " + pinLength + " with intermediate pin " + intermediatePin);
+            }
 
-                @Override
-                public void onEmpty() {
-                    Log.d(TAG, "Pin empty");
-                }
+        };
 
-                @Override
-                public void onPinChange(int pinLength, String intermediatePin) {
-                    Log.d(TAG, "Pin changed, new length " + pinLength + " with intermediate pin " + intermediatePin);
-                }
+        mPinLockView = (PinLockView) findViewById(R.id.pinlockView);
+        mIndicatorDots = (IndicatorDots) findViewById(R.id.indicator_dots);
 
-            };
+        mPinLockView.attachIndicatorDots(mIndicatorDots);
+        mPinLockView.setPinLockListener(pinLockListener);
 
-            mPinLockView = (PinLockView) findViewById(R.id.pinlockView);
-            mIndicatorDots = (IndicatorDots) findViewById(R.id.indicator_dots);
+        mPinLockView.setPinLength(PIN_LENGTH);
 
-            mPinLockView.attachIndicatorDots(mIndicatorDots);
-            mPinLockView.setPinLockListener(pinLockListener);
+        mIndicatorDots.setIndicatorType(IndicatorDots.IndicatorType.FILL_WITH_ANIMATION);
 
-            mPinLockView.setPinLength(PIN_LENGTH);
-
-            mIndicatorDots.setIndicatorType(IndicatorDots.IndicatorType.FILL_WITH_ANIMATION);
-
-            checkForFont();
-        }
+        checkForFont();
     }
 
     private void checkForFont() {
@@ -261,7 +258,8 @@ public class EnterPinActivity extends AppCompatActivity {
             }
         } catch (NoSuchAlgorithmException |
                 NoSuchPaddingException e) {
-            throw new RuntimeException("Failed to get Cipher", e);
+            Log.e(TAG, "Failed to init cipher: Error message: ");
+            e.printStackTrace();
         }
 
         try {
@@ -272,8 +270,11 @@ public class EnterPinActivity extends AppCompatActivity {
             //Return true if the mCipher has been initialized successfully//
             return true;
         } catch (Exception e) {
-            throw new RuntimeException("Failed to init Cipher", e);
+            Log.e(TAG, "Failed to init cipher. Error message: ");
+            e.printStackTrace();
         }
+
+        return false;
     }
 
     private void writePinToSharedPreferences(String pin) {
@@ -309,8 +310,7 @@ public class EnterPinActivity extends AppCompatActivity {
         if (!mDefaultPin.equals("") && pin.equals(mDefaultPin)) {
             setResult(RESULT_OK);
             finish();
-        }
-        else if (Utils.sha256(pin).equals(getPinFromSharedPreferences())) {
+        } else if (Utils.sha256(pin).equals(getPinFromSharedPreferences())) {
             setResult(RESULT_OK);
             finish();
         } else {
