@@ -388,7 +388,9 @@ public class EnterPinActivity extends AppCompatActivity {
 
         };
 
-        mFingerprintManager = (FingerprintManager) getSystemService(FINGERPRINT_SERVICE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            mFingerprintManager = (FingerprintManager) getSystemService(FINGERPRINT_SERVICE);
+        }
 
         // If you’ve set your app’s minSdkVersion to anything lower than 23, then you’ll need to verify that the device is running Marshmallow
         // or higher before executing any fingerprint-related code.
